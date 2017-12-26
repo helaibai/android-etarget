@@ -9,6 +9,7 @@ import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothManager;
+import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
@@ -57,6 +58,8 @@ public class BluetoothService extends Service {
         mbluetoothGatt = device.connectGatt(this, false, mbluetoothgattcallback);
         if(mbluetoothGatt == null){
             Log.i(TAG,"Service mbluetoothGatt is null .");
+        }else{
+            Log.i(TAG, "Serice mbluetoothGatt is sucess .");
         }
         currentDeviceAddress = address;
         return true;
@@ -127,20 +130,26 @@ public class BluetoothService extends Service {
     private final BluetoothGattCallback mbluetoothgattcallback = new BluetoothGattCallback() {
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-            super.onConnectionStateChange(gatt, status, newState);
-            Log.i(TAG,"Service onConnectionStateChange .");
+            if(newState == BluetoothProfile.STATE_CONNECTED){
+                Log.d(TAG, currentDeviceAddress + " 链接成功.");
+                BluetoothBroadcast(ACTION_GATT_CONNECTED);
+            }
+            if(status == BluetoothProfile.STATE_DISCONNECTED){
+                Log.d(TAG, currentDeviceAddress + " 断开链接");
+                BluetoothBroadcast(ACTION_GATT_DISCONNECTED);
+            }
+            Log.i(TAG,"Service onConnectionStateChange() .");
         }
 
 
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
-            super.onServicesDiscovered(gatt, status);
-            Log.i(TAG,"Service onServicesDiscovered .");
+            Log.i(TAG,"Service onServicesDiscovered() .");
         }
 
         @Override
         public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-            Log.i(TAG,"Service onCharacteristicRead . ");
+            Log.i(TAG,"Service onCharacteristicRead() . ");
             if(status == BluetoothGatt.GATT_SUCCESS){
 
                 BluetoothBroadcast(ACTION_GATT_DATA_AVAILABLE, characteristic);
@@ -149,49 +158,37 @@ public class BluetoothService extends Service {
 
         @Override
         public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-            super.onCharacteristicWrite(gatt, characteristic, status);
-            Log.i(TAG, "Service onCharacteristicWrite .");
+
+            Log.i(TAG, "Service onCharacteristicWrite() .");
         }
 
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
-            super.onCharacteristicChanged(gatt, characteristic);
-            Log.i(TAG,"Service onCharacteristicChanged .");
+
+            Log.i(TAG,"Service onCharacteristicChanged() .");
         }
 
         @Override
         public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
-            super.onDescriptorRead(gatt, descriptor, status);
-            Log.i(TAG,"Service onDescriptorRead .");
+
+            Log.i(TAG,"Service onDescriptorRead() .");
 
         }
 
         @Override
         public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
-            super.onDescriptorWrite(gatt, descriptor, status);
             Log.i(TAG,"Service onDescriptorWrite .");
-
         }
 
         @Override
         public void onReliableWriteCompleted(BluetoothGatt gatt, int status) {
-            super.onReliableWriteCompleted(gatt, status);
             Log.i(TAG,"Service onReliableWriteCompleted .");
 
         }
 
         @Override
         public void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status) {
-            super.onReadRemoteRssi(gatt, rssi, status);
             Log.i(TAG,"Service onReadRemoteRssi .");
-
-        }
-
-        @Override
-        public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
-            super.onMtuChanged(gatt, mtu, status);
-            Log.i(TAG,"Service onMtuChanged .");
-
         }
 
     };

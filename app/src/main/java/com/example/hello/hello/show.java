@@ -98,6 +98,7 @@ public class show extends Activity {
         msg.what = what;
         Bundle bundle = new Bundle();
         bundle.putString("C_STATUS", status);
+        msg.setData(bundle);
         mhander.sendMessage(msg);
         Log.i(TAG,"Changed status " + status);
     }

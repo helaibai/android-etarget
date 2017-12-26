@@ -50,9 +50,11 @@ public class Start extends AppCompatActivity {
             final int REQUEST_ENABLE_BT = 1;
             startActivityForResult(intent, REQUEST_ENABLE_BT);
         }
-        mdeviceListAdapter = new DeviceListAdapter();
         lv = (ListView) findViewById(R.id.lv);
+
+        mdeviceListAdapter = new DeviceListAdapter();
         lv.setAdapter(mdeviceListAdapter);
+
         lv.setOnItemClickListener(new AdapterView.OnItemClickListener(){
             @Override
             public void onItemClick(AdapterView<?> arg, View view, int pos, long id){
@@ -81,6 +83,10 @@ public class Start extends AppCompatActivity {
             public void onClick(View view) {
                 if (scanning == false) {
                     Log.i(TAG, "start scan ...");
+
+                    mdeviceListAdapter = new DeviceListAdapter();
+                    lv.setAdapter(mdeviceListAdapter);
+
                     button_scan.setText("正在扫描 ...");
                     mhandler.postDelayed(new Runnable() {
                         @Override
@@ -93,6 +99,9 @@ public class Start extends AppCompatActivity {
                     }, 10000);
                     mbluetoothAdapter.startLeScan(mbluetoothscanCallback);
                     scanning = true;
+                }
+                if(scanning == true){
+                    Log.i(TAG, "正在扫描,需要停止?");
                 }
             }
 
@@ -158,7 +167,7 @@ public class Start extends AppCompatActivity {
             view = mInflator.inflate(R.layout.listitem, null);
             TextView deviceInformation = (TextView) view.findViewById(R.id.device_information);
             BluetoothDevice device = mdevices.get(i);
-            deviceInformation.setText(device.getAddress());
+            deviceInformation.setText(device.getAddress() + device.getName());
             return view;
         }
     }
