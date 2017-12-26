@@ -21,7 +21,8 @@ public class BluetoothService extends Service {
     public final static String ACTION_GATT_CONNECTED    = "com.example.hello.hello.ACTION_GATT_CONNECTED";
     public final static String ACTION_GATT_DISCONNECTED = "com.example.hello.hello.ACTION_GATT_DISCONNECTED";
     public final static String ACTION_GATT_DISCOVERED   = "com.example.hello.hello.ACTION_GATT_DISCOVERED";
-    public final static String ACTION_GATT_DATA_OK      = "com.example.hello.hello.ACTION_GATT_DATA_OK";
+    public final static String ACTION_GATT_DATA_AVAILABLE      = "com.example.hello.hello.ACTION_GATT_DATA_OK";
+    public final static String ACTION_GATT_DATA_AVAILABLE_READ = "com.example.hello.hello.ACTION_GATT_DATA_OK_READ";
 
     private String currentDeviceAddress;
     private BluetoothManager mbluetoothManager;
@@ -60,6 +61,20 @@ public class BluetoothService extends Service {
         currentDeviceAddress = address;
         return true;
     }
+    public void BluetoothServiceReadRssi(){
+        if(mbluetoothAdapter == null || mbluetoothGatt == null){
+            Log.e(TAG, "BluetoothServiceReadRssi is null");
+            return;
+        }
+        mbluetoothGatt.readRemoteRssi();
+    }
+    public void BluetoothServiceRead(BluetoothGattCharacteristic characteristic){
+        if(mbluetoothAdapter == null || mbluetoothGatt == null){
+            Log.e(TAG, "BluetoothServiceRead is null");
+            return;
+        }
+        mbluetoothGatt.readCharacteristic(characteristic);
+    }
     public boolean BluetoothServiceWrite(BluetoothGattCharacteristic characteristic){
         if(mbluetoothAdapter == null || mbluetoothGatt == null){
             Log.i(TAG,"Service BluetoothServiceWrite is null");
@@ -86,9 +101,10 @@ public class BluetoothService extends Service {
     }
     private void BluetoothBroadcast(final String action, BluetoothGattCharacteristic characteristic){
         Intent intent = new Intent(action);
-
-        byte[] data = characteristic.getValue();
-
+        final byte[] data = characteristic.getValue();
+        if(data != null && data.length < 0){
+            intent.putExtra(ACTION_GATT_DATA_AVAILABLE_READ, data);
+        }
         sendBroadcast(intent);
     }
     @Override
@@ -124,8 +140,11 @@ public class BluetoothService extends Service {
 
         @Override
         public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-            super.onCharacteristicRead(gatt, characteristic, status);
             Log.i(TAG,"Service onCharacteristicRead . ");
+            if(status == BluetoothGatt.GATT_SUCCESS){
+
+                BluetoothBroadcast(ACTION_GATT_DATA_AVAILABLE, characteristic);
+            }
         }
 
         @Override

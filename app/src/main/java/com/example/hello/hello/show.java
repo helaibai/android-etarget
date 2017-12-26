@@ -1,6 +1,7 @@
 package com.example.hello.hello;
 
 import android.app.Activity;
+import android.app.Notification;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -8,7 +9,9 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -22,13 +25,18 @@ import com.example.hello.hello.BluetoothService;
 public class show extends Activity {
 
     public static String TAG = "xxoo";
+
+    private static String C_STATUS_CONNECTED = "连接";
+    private static String C_STATUS_DISCONNECTED = "断开";
+
     public static String EXTRAS_DEVICE_NAME = "DEVICE_NAME";
     public static String EXTRAS_DEVICE_ADDRESS = "DEVICE_ADDRESS";
+    private final static int MSG_STATUS = 0x01;
 
     private Bundle bundle;
     private String mDeviceAddress,mDeviceName;
     private static BluetoothService mbluetoothService;
-    private
+    private boolean connect_status = false;
 
 
     TextView show_value ;
@@ -75,12 +83,32 @@ public class show extends Activity {
             if(!mbluetoothService.BluetoothServiceConnect(mDeviceAddress)){
                 Log.e(TAG, "mbluetoothService.BluetoothServiceConnect " + mDeviceAddress + " false");
             }
-            return;
         }
 
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
             mbluetoothService = null;
+        }
+    };
+    private void updateBluetoothData(String data){
+        Log.i(TAG, "R[" + data + "]");
+    }
+    private void updateConnectionStatus(int what, String status){
+        Message msg = new Message();
+        msg.what = what;
+        Bundle bundle = new Bundle();
+        bundle.putString("C_STATUS", status);
+        mhander.sendMessage(msg);
+        Log.i(TAG,"Changed status " + status);
+    }
+    private Handler mhander = new Handler(){
+        public void handleMessage(Message msg){
+            switch (msg.what){
+                case MSG_STATUS:
+                    String status = msg.getData().getString("C_STATUS");
+                    show_status.setText(status);
+                    break;
+            }
         }
     };
     private final BroadcastReceiver mBluetoothSericeRecevier = new BroadcastReceiver() {
@@ -92,12 +120,17 @@ public class show extends Activity {
                 Log.i(TAG,"action discovered");
             }
             if(BluetoothService.ACTION_GATT_CONNECTED.equals(action)){
+                connect_status = true;
+                updateConnectionStatus(MSG_STATUS, C_STATUS_CONNECTED);
                 Log.i(TAG,"action connected");
             }
             if(BluetoothService.ACTION_GATT_DISCONNECTED.equals(action)) {
+                connect_status = false;
+                updateConnectionStatus(MSG_STATUS, C_STATUS_DISCONNECTED);
                 Log.i(TAG,"action disconnected");
             }
-            if(BluetoothService.ACTION_GATT_DATA_OK.equals(action)){
+            if(BluetoothService.ACTION_GATT_DATA_AVAILABLE.equals(action)){
+                updateBluetoothData(intent.getExtras().getString(BluetoothService.ACTION_GATT_DATA_AVAILABLE_READ));
                 Log.i(TAG,"action ok");
             }
         }
@@ -113,7 +146,7 @@ public class show extends Activity {
         super.onResume();
         Log.i(TAG, "Show onResume .");
         final IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(BluetoothService.ACTION_GATT_DATA_OK);
+        intentFilter.addAction(BluetoothService.ACTION_GATT_DATA_AVAILABLE);
         intentFilter.addAction(BluetoothService.ACTION_GATT_DISCONNECTED);
         intentFilter.addAction(BluetoothService.ACTION_GATT_CONNECTED);
         intentFilter.addAction(BluetoothService.ACTION_GATT_DISCOVERED);
