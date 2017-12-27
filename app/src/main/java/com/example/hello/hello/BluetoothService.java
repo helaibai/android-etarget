@@ -16,6 +16,8 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
 
+import java.util.UUID;
+
 public class BluetoothService extends Service {
 
     private final static String TAG = "xxoo";
@@ -24,6 +26,8 @@ public class BluetoothService extends Service {
     public final static String ACTION_GATT_DISCOVERED   = "com.example.hello.hello.ACTION_GATT_DISCOVERED";
     public final static String ACTION_GATT_DATA_AVAILABLE      = "com.example.hello.hello.ACTION_GATT_DATA_OK";
     public final static String ACTION_GATT_DATA_AVAILABLE_READ = "com.example.hello.hello.ACTION_GATT_DATA_OK_READ";
+    private final static String muuid = "00002902-0000-1000-8000-00805f9b34fb";
+
 
     private String currentDeviceAddress;
     private BluetoothManager mbluetoothManager;
@@ -98,6 +102,20 @@ public class BluetoothService extends Service {
         mbluetoothGatt.close();
         mbluetoothGatt = null;
     }
+    public boolean setCharacteristcNotification(BluetoothGattCharacteristic characteristic, boolean enabled){
+        if(mbluetoothAdapter == null || mbluetoothGatt == null){
+            Log.d(TAG, "Service setCharacteristcNotification is null .");
+            return false;
+        }
+        mbluetoothGatt.setCharacteristicNotification(characteristic, enabled);
+        BluetoothGattDescriptor clinetConfig = characteristic.getDescriptor(UUID.fromString(muuid));
+        if(enabled){
+            clinetConfig.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+        }else{
+            clinetConfig.setValue(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
+        }
+        return mbluetoothGatt.writeDescriptor(clinetConfig);
+    }
     private void BluetoothBroadcast(final String action){
         Intent intent = new Intent(action);
         sendBroadcast(intent);
@@ -144,35 +162,34 @@ public class BluetoothService extends Service {
 
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
-            Log.i(TAG,"Service onServicesDiscovered() .");
+            Log.i(TAG,"Service onServicesDiscovered() status :" + status);
+            if(status == BluetoothGatt.GATT_SUCCESS){
+                BluetoothBroadcast(ACTION_GATT_DISCOVERED);
+            }
         }
 
         @Override
         public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-            Log.i(TAG,"Service onCharacteristicRead() . ");
+            Log.i(TAG,"Service onCharacteristicRead() status :" + status);
             if(status == BluetoothGatt.GATT_SUCCESS){
-
+                Log.d(TAG, "onCharacteristicRead Data success");
                 BluetoothBroadcast(ACTION_GATT_DATA_AVAILABLE, characteristic);
             }
         }
 
         @Override
         public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-
             Log.i(TAG, "Service onCharacteristicWrite() .");
         }
 
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
-
             Log.i(TAG,"Service onCharacteristicChanged() .");
         }
 
         @Override
         public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
-
             Log.i(TAG,"Service onDescriptorRead() .");
-
         }
 
         @Override
@@ -183,7 +200,6 @@ public class BluetoothService extends Service {
         @Override
         public void onReliableWriteCompleted(BluetoothGatt gatt, int status) {
             Log.i(TAG,"Service onReliableWriteCompleted .");
-
         }
 
         @Override
