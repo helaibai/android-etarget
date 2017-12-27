@@ -134,7 +134,7 @@ public class BluetoothService extends Service {
                 Log.d(TAG, currentDeviceAddress + " 链接成功.");
                 BluetoothBroadcast(ACTION_GATT_CONNECTED);
             }
-            if(status == BluetoothProfile.STATE_DISCONNECTED){
+            if(newState == BluetoothProfile.STATE_DISCONNECTED){
                 Log.d(TAG, currentDeviceAddress + " 断开链接");
                 BluetoothBroadcast(ACTION_GATT_DISCONNECTED);
             }
