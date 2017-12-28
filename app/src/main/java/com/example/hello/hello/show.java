@@ -2,6 +2,10 @@ package com.example.hello.hello;
 
 import android.app.Activity;
 import android.app.Notification;
+import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattDescriptor;
+import android.bluetooth.BluetoothGattService;
+import android.bluetooth.BluetoothGattCharacteristic;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -18,6 +22,11 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.example.hello.hello.BluetoothService;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
 /**
  * Created by shenjunwei on 17/12/21.
  */
@@ -25,6 +34,8 @@ import com.example.hello.hello.BluetoothService;
 public class show extends Activity {
 
     public static String TAG = "xxoo";
+
+    private static String BLUETOOTH_ETARGET_UUID = "0000ffe1-0000-1000-8000-00805f9b34fb";
 
     private static String C_STATUS_CONNECTED = "连接";
     private static String C_STATUS_DISCONNECTED = "断开";
@@ -37,6 +48,10 @@ public class show extends Activity {
     private String mDeviceAddress,mDeviceName;
     private static BluetoothService mbluetoothService;
     private boolean connect_status = false;
+    private Handler mhandler;
+    private static BluetoothGattCharacteristic target_chara = null;
+
+    private ArrayList<ArrayList<BluetoothGattCharacteristic>> mGattCharacteristics = new ArrayList<ArrayList<BluetoothGattCharacteristic>>();
 
 
     TextView show_value ;
@@ -99,10 +114,10 @@ public class show extends Activity {
         Bundle bundle = new Bundle();
         bundle.putString("C_STATUS", status);
         msg.setData(bundle);
-        mhander.sendMessage(msg);
+        msghander.sendMessage(msg);
         Log.i(TAG,"Changed status " + status);
     }
-    private Handler mhander = new Handler(){
+    private Handler msghander = new Handler(){
         public void handleMessage(Message msg){
             switch (msg.what){
                 case MSG_STATUS:
@@ -156,6 +171,61 @@ public class show extends Activity {
             mbluetoothService.BluetoothServiceConnect(mDeviceAddress);
         }
         return;
+    }
+    private void DisplayGattServices(List<BluetoothGattService> gattServices){
+        if(gattServices == null){
+            return;
+        }
+        String uuid = null;
+        String unknownServiceString = "unkownService";
+        String unknownCharaString = "unknownCharacteristic";
+        ArrayList<HashMap<String, String>> gattServiceData = new ArrayList<HashMap<String, String>>();
+        ArrayList<ArrayList<HashMap<String, String>>> gattCharacteristicData = new ArrayList<ArrayList<HashMap<String, String>>>();
+        for(BluetoothGattService gattService : gattServices){
+            HashMap<String, String> currentServiceData = new HashMap<String, String>();
+            uuid = gattService.getUuid().toString();
+            gattServiceData.add(currentServiceData);
+            Log.i(TAG, "Service UUID : " + uuid);
+            ArrayList<HashMap<String, String>> gattCharacteristicGroupData = new ArrayList<HashMap<String, String>>();
+            List<BluetoothGattCharacteristic> gattCharacteristics = gattService.getCharacteristics();
+            ArrayList<BluetoothGattCharacteristic> charas = new ArrayList<BluetoothGattCharacteristic>();
+            for(final BluetoothGattCharacteristic gattCharacteristic : gattCharacteristics){
+                charas.add(gattCharacteristic);
+                HashMap<String, String> currentCharaData = new HashMap<String, String>();
+                uuid = gattCharacteristic.getUuid().toString();
+
+                if (gattCharacteristic.getUuid().toString().equals(BLUETOOTH_ETARGET_UUID))
+                {
+                    mhandler.postDelayed(new Runnable()
+                    {
+
+                        @Override
+                        public void run()
+                        {
+                            // TODO Auto-generated method stub
+                            mbluetoothService.readCharacteristic(gattCharacteristic);
+                        }
+                    }, 200);
+                    mbluetoothService.setCharacteristcNotification(
+                            gattCharacteristic, true);
+                    target_chara = gattCharacteristic;
+                    // mBluetoothLeService.writeCharacteristic(gattCharacteristic);
+                }
+                List<BluetoothGattDescriptor> descriptors = gattCharacteristic
+                        .getDescriptors();
+                for (BluetoothGattDescriptor descriptor : descriptors)
+                {
+                    Log.i(TAG, "---descriptor UUID:" + descriptor.getUuid());
+                    mbluetoothService.getCharacteristicDescriptor(descriptor);
+                    // mBluetoothLeService.setCharacteristicNotification(gattCharacteristic,
+                    // true);
+                }
+
+                gattCharacteristicGroupData.add(currentCharaData);
+            }
+            mGattCharacteristics.add(charas);
+            gattCharacteristicData.add(gattCharacteristicGroupData);
+        }
     }
 
 }

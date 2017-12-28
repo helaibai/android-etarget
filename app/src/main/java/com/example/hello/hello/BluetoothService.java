@@ -91,7 +91,7 @@ public class BluetoothService extends Service {
     }
     public void BluetoothServiceDisconnect(){
         if(mbluetoothAdapter == null || mbluetoothGatt == null){
-            Log.i(TAG, "Service BluetoothServiceDisconnect() empty");
+            Log.e(TAG, "Service BluetoothServiceDisconnect() empty");
             return ;
         }
     }
@@ -101,6 +101,23 @@ public class BluetoothService extends Service {
         }
         mbluetoothGatt.close();
         mbluetoothGatt = null;
+    }
+    public void readCharacteristic(BluetoothGattCharacteristic characteristic)
+    {
+        if (mbluetoothAdapter == null || mbluetoothGatt == null)
+        {
+            Log.e(TAG, "readCharacteristic not initialized");
+            return;
+        }
+        mbluetoothGatt.readCharacteristic(characteristic);
+
+    }
+    public void getCharacteristicDescriptor(BluetoothGattDescriptor descriptor){
+        if(mbluetoothAdapter == null || mbluetoothGatt == null){
+            Log.e(TAG, "Service getCharacteristicDescriptor() empty");
+            return ;
+        }
+        mbluetoothGatt.readDescriptor(descriptor);
     }
     public boolean setCharacteristcNotification(BluetoothGattCharacteristic characteristic, boolean enabled){
         if(mbluetoothAdapter == null || mbluetoothGatt == null){
